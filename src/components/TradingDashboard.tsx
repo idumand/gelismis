@@ -29,7 +29,6 @@ interface TradingDashboardProps {
   setTimeframe: (tf: Timeframe) => void;
   onForceCloseTrade: (tradeId: string) => void;
   logs: LogEntry[];
-  coinMetrics: Record<string, any>;
 }
 
 export const TradingDashboard: React.FC<TradingDashboardProps> = ({
@@ -43,7 +42,6 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
   setTimeframe,
   onForceCloseTrade,
   logs,
-  coinMetrics,
 }) => {
   const [tradeFilter, setTradeFilter] = useState<'open' | 'closed' | 'all'>('open');
 
@@ -55,50 +53,6 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Five-coin live indicator dashboard */}
-      <div className="bg-[#151921] border border-[#1e232f] rounded-xl p-3 sm:p-4 shadow-xl">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="font-bold text-sm text-white">5 Coin Gösterge Paneli</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Her coin bağımsız Futures verisi, para akışı ve model hedefiyle izlenir.</p>
-          </div>
-          <span className="text-[10px] text-sky-300 font-mono">FUTURES LIVE</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2">
-          {markets.slice(0, 5).map((m) => {
-            const cm = coinMetrics[m.symbol] || {};
-            const openTrade = openTrades.find((t) => t.pair === m.symbol);
-            const longAdv = Number(cm.longAdvantage ?? 0);
-            const shortAdv = Number(cm.shortAdvantage ?? 0);
-            const netFlow = Number(cm.netInflowUSD ?? 0);
-            const expected = openTrade ? Number(openTrade.model_expected_net_pnl_usd ?? 0) : Number(cm.expectedNetPnlUsdLong ?? 0);
-            const target = openTrade ? Number(openTrade.model_target_price ?? 0) : Number(cm.modelTargetPriceLong ?? 0);
-            const isSelected = selectedPair === m.symbol;
-            return (
-              <button key={m.symbol} type="button" onClick={() => setSelectedPair(m.symbol)} className={`text-left rounded-lg border p-3 transition ${isSelected ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-slate-800 bg-[#0b0e14] hover:border-slate-700'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold font-mono text-white text-xs">{m.symbol}</span>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${openTrade ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>{openTrade ? 'POZİSYON' : 'İZLEME'}</span>
-                </div>
-                <div className="mt-2 flex items-end justify-between gap-2">
-                  <div className="font-mono text-white text-sm">${Number(m.price || cm.currentPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}</div>
-                  <div className={`text-[10px] font-mono ${Number(m.change_24h_pct) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{Number(m.change_24h_pct || 0).toFixed(2)}%</div>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-1 text-[9px] font-mono">
-                  <div className="rounded bg-slate-900/80 px-2 py-1 text-slate-300">Giriş L {Number(cm.entryLongAdvantage ?? longAdv).toFixed(0)}%</div>
-                  <div className="rounded bg-slate-900/80 px-2 py-1 text-slate-300">Giriş S {Number(cm.entryShortAdvantage ?? shortAdv).toFixed(0)}%</div>
-                  <div className={`rounded px-2 py-1 ${netFlow >= 0 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'}`}>Akış {netFlow >= 0 ? '+' : ''}${(netFlow/1000).toFixed(1)}K</div>
-                  <div className="rounded bg-amber-500/10 text-amber-300 px-2 py-1">Hedef +${expected.toFixed(2)}</div>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[9px] text-slate-500">
-                  <span>Giriş Gap {Number(cm.entryGap ?? cm.gap ?? 0).toFixed(0)} · 10 seviye</span>
-                  <span>Hedef ${target ? target.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '—'}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
       {/* KPI Performance Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Profit/Loss Card */}
@@ -197,32 +151,6 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
                 {trade.profit_pct >= 0 ? '+' : ''}{trade.profit_pct.toFixed(2)}%
               </span>
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* Entry-time quantitative profit target */}
-      {openTrades.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-2">
-          {openTrades.map((trade) => (
-            <div key={`target-${trade.id}`} className="bg-[#151921] border border-amber-500/20 rounded-xl px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold">Giriş Anındaki Model Kâr Hedefi · {trade.pair}</div>
-                  <div className="text-lg font-mono font-bold text-white mt-1">
-                    +${Number(trade.model_expected_net_pnl_usd || 0).toFixed(2)} <span className="text-xs text-slate-500">tahmini net</span>
-                  </div>
-                </div>
-                <div className="text-right text-[11px]">
-                  <div className="text-slate-300">Hedef fiyat</div>
-                  <div className="font-mono text-amber-300">${Number(trade.model_target_price || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}</div>
-                  <div className="text-slate-500">%{Number(trade.model_confidence || 0).toFixed(0)} model güveni</div>
-                </div>
-              </div>
-              <div className="mt-2 text-[10px] text-slate-500">
-                Bu değer emir defteri + gerçek Futures para akışı + likidite hareket alanından giriş anında hesaplanır. Garanti değildir; pozisyon kapandığında hedefin tutup tutmadığı kaydedilir.
-              </div>
-            </div>
           ))}
         </div>
       )}
@@ -389,7 +317,6 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
                 <th className="py-3 px-4">Giriş Fiyatı</th>
                 <th className="py-3 px-4">Mevcut / Kapanış</th>
                 <th className="py-3 px-4">Zarar Kes / Kâr Al</th>
-                <th className="py-3 px-4">Model Kâr Hedefi</th>
                 <th className="py-3 px-4">Kâr % (USDT)</th>
                 <th className="py-3 px-4 text-right">İşlem / Çıkış Nedeni</th>
               </tr>
@@ -397,7 +324,7 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
             <tbody className="divide-y divide-[#1e232f]">
               {displayedTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-500 font-sans">
+                  <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
                     Seçilen filtreye uygun işlem bulunamadı.
                   </td>
                 </tr>
@@ -428,28 +355,23 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({
                           <div className="text-emerald-400">TP: +{t.take_profit_pct}%</div>
                         )}
                       </td>
-                      <td className="py-3 px-4 min-w-[180px]">
-                        {t.model_expected_net_pnl_usd !== undefined ? (
-                          <>
-                            <div className="font-bold text-amber-300">
-                              +${Number(t.model_expected_net_pnl_usd || 0).toFixed(2)} net
-                            </div>
-                            <div className="text-[10px] text-slate-400">
-                              Hedef: ${Number(t.model_target_price || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} · +{Number(t.target_pct || 0).toFixed(2)}%
-                            </div>
-                            <div className="text-[10px] text-slate-500">
-                              Güven: %{Number(t.model_confidence || 0).toFixed(0)} · {t.is_open ? 'Model tahmini' : (t.model_target_hit ? 'Hedef görüldü' : 'Hedef görülmedi')}
-                            </div>
-                          </>
-                        ) : <span className="text-slate-600">—</span>}
-                      </td>
                       <td className="py-3 px-4">
                         <div className={`font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {isPositive ? '+' : ''}{t.profit_pct.toFixed(2)}%
                         </div>
                         <div className={`text-[11px] ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {isPositive ? '+' : ''}${t.profit_abs.toFixed(2)} USDT
+                          {isPositive ? '+' : ''}${t.profit_abs.toFixed(2)} USDT (net)
                         </div>
+                        {t.is_open && (t.target_profit_usd || t.target_price) ? (
+                          <div className="text-[10px] text-cyan-300 mt-1">
+                            Hedef: +${Number(t.target_profit_usd || 0).toFixed(2)} @ ${Number(t.target_price || 0).toLocaleString()}
+                          </div>
+                        ) : null}
+                        {t.is_open && (t.peak_net_pnl_usd || 0) > 0 ? (
+                          <div className="text-[10px] text-amber-300">
+                            Tepe net: +${Number(t.peak_net_pnl_usd || 0).toFixed(2)}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="py-3 px-4 text-right">
                         {t.is_open ? (

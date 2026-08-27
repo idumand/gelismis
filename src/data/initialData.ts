@@ -82,7 +82,7 @@ export const INITIAL_CONFIG_JSON = JSON.stringify({
   timeframe: "5m",
   dry_run: false,
   cancel_open_orders_on_exit: false,
-  trading_mode: "futures",
+  trading_mode: "spot",
   margin_mode: "isolated",
   unfilledtimeout: {
     entry: 10,
@@ -131,7 +131,7 @@ export const INITIAL_CONFIG_JSON = JSON.stringify({
   initial_state: "running"
 }, null, 2);
 
-export function generateCandles(_symbol: string, _timeframe: string, _count = 80): Candle[] {
-  // Gerçek piyasa verisi yoksa sahte mum üretme. UI, sunucudan gerçek Futures klines beklemeli.
-  return [];
-}
+
+// Live candle data is supplied by the server/Binance. No synthetic market data is generated.
+
+export const INITIAL_LOGS = [];

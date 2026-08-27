@@ -34,7 +34,6 @@ export function App() {
   const [metrics, setMetrics] = useState<BotMetrics>(INITIAL_METRICS);
   const [trades, setTrades] = useState<Trade[]>(INITIAL_TRADES);
   const [markets, setMarkets] = useState<MarketPairInfo[]>(INITIAL_MARKETS);
-  const [coinMetrics, setCoinMetrics] = useState<Record<string, any>>({});
 
   useEffect(() => {
     // Fetch initial 24hr ticker data to hydrate INITIAL_MARKETS with real values immediately
@@ -48,21 +47,6 @@ export function App() {
             tickerList = json.tickers;
           }
         } catch (e) {}
-
-        if (tickerList.length === 0) {
-          const res = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            tickerList = data.map(d => ({
-              symbol: d.symbol,
-              price: parseFloat(d.lastPrice),
-              change_24h_pct: parseFloat(d.priceChangePercent),
-              volume_24h_usdt: parseFloat(d.quoteVolume),
-              high_24h: parseFloat(d.highPrice),
-              low_24h: parseFloat(d.lowPrice)
-            }));
-          }
-        }
 
         if (tickerList.length > 0) {
           setMarkets(prev => {
@@ -148,19 +132,16 @@ export function App() {
   useEffect(() => {
     const fetchEngineStatus = async () => {
       try {
-        const [statusRes, logsRes, tradesRes, profitRes, deepRes] = await Promise.all([
+        const [statusRes, logsRes, tradesRes, profitRes] = await Promise.all([
           fetch('/api/v1/status'),
           fetch('/api/v1/logs'),
           fetch('/api/v1/trades'),
-          fetch('/api/v1/profit'),
-          fetch('/api/v1/deepdata')
+          fetch('/api/v1/profit')
         ]);
         const statusData = await statusRes.json();
         const logsData = await logsRes.json();
         const tradesData = await tradesRes.json();
         const profitData = await profitRes.json();
-        const deepData = await deepRes.json();
-        if (deepData?.metrics && typeof deepData.metrics === 'object') setCoinMetrics(deepData.metrics);
         if (tradesData.trades) {
           setTrades(tradesData.trades.map((t: any) => {
             if (t.is_open) {
@@ -311,7 +292,7 @@ export function App() {
     const connectWebSocket = () => {
       if (!isSubscribed) return;
       try {
-        ws = new WebSocket('wss://fstream.binance.com/ws/!miniTicker@arr');
+        ws = new WebSocket('/api/v1/stream');
 
         ws.onopen = () => {
           // Connected successfully
@@ -404,6 +385,7 @@ export function App() {
           }
         } catch (e) {}
 
+
         if (rawData.length > 0 && isMounted) {
           const formattedCandles = rawData.map((d: any) => ({
             time: new Date(d[0]).toISOString(),
@@ -417,8 +399,8 @@ export function App() {
           setCandles(formattedCandles);
         }
       } catch (e) {
-        // Gerçek Futures verisi yoksa sahte mum üretme.
-        if (isMounted && candles.length === 0) setCandles([]);
+        // Do not synthesize candles. The server is the single source of truth
+        // for the currently selected Binance environment (TESTNET or LIVE).
       }
     };
 
@@ -644,7 +626,6 @@ export function App() {
             setTimeframe={setTimeframe}
             onForceCloseTrade={handleForceCloseTrade}
             logs={logs}
-            coinMetrics={coinMetrics}
           />
         )}
 

@@ -44,13 +44,10 @@ export interface Trade {
   stop_loss_pct: number;
   initial_stop_loss_pct?: number;
   take_profit_pct?: number;
-  model_target_price?: number;
-  model_expected_net_pnl_usd?: number;
-  model_expected_gross_pnl_usd?: number;
-  model_confidence?: number;
-  model_target_hit?: boolean;
-  model_max_favorable_pnl_usd?: number;
-  model_target_realization_pct?: number;
+  target_price?: number;
+  target_profit_usd?: number;
+  minimum_net_profit_usd?: number;
+  peak_net_pnl_usd?: number;
   fee_open: number;
   fee_close?: number;
 }

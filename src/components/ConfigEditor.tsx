@@ -18,6 +18,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
   const [stakeAmount, setStakeAmount] = useState<string>("25");
   const [leverage, setLeverage] = useState<string>("15");
   const [maxOpenTrades, setMaxOpenTrades] = useState<string>("1");
+  const [testnet, setTestnet] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
@@ -48,6 +49,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
         if (cfg.max_open_trades !== undefined && cfg.max_open_trades !== null) {
           setMaxOpenTrades(String(cfg.max_open_trades));
         }
+        setTestnet(cfg?.exchange?.testnet !== false);
       }
     } catch(e) {}
   }, [initialConfigJson]);
@@ -78,11 +80,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
       const res = await fetch('/api/v1/exchange-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          apiKey: key, 
-          secretKey: secret,
-          testnet: parsedConfig?.exchange?.testnet === true
-        })
+        body: JSON.stringify({ apiKey: key, secretKey: secret, testnet })
       });
       const data = await res.json();
       if (data.success) {
@@ -192,7 +190,11 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
         ...parsedConfig,
         stake_amount: finalStake,
         leverage: Math.min(Math.max(finalLeverage, 1), 125),
-        max_open_trades: Math.max(finalMaxOpenTrades, 1)
+        max_open_trades: Math.max(finalMaxOpenTrades, 1),
+        exchange: {
+          ...(parsedConfig?.exchange || {}),
+          testnet
+        }
       };
 
       setStakeAmount(String(updated.stake_amount));
@@ -443,7 +445,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
                     placeholder="Örn: 1"
                     className="w-full bg-[#0b0e14] border border-slate-700 text-white font-mono text-sm rounded-lg p-3 focus:outline-none focus:border-emerald-500 transition-colors"
                  />
-               <p className="text-[10px] text-slate-500 mt-1">Aynı anda en fazla kaç coine işlem açılabileceği (Örn: 1).</p>
+               <p className="text-[10px] text-slate-500 mt-1">Bu bir zorunlu işlem sayısı değildir. Örn. 6 = en fazla 6 açık pozisyon; şartları sağlayan 2 coin varsa yalnızca 2 işlem açılır.</p>
             </div>
           </div>
 
@@ -484,6 +486,29 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isTestingApi ? 'animate-spin' : ''}`} />
             <span>{isTestingApi ? 'Doğrulanıyor...' : 'Bağlantıyı Test Et'}</span>
           </button>
+        </div>
+
+        {/* SAFE TESTNET / LIVE MODE */}
+        <div className={`p-4 rounded-xl border ${testnet
+          ? 'bg-emerald-500/10 border-emerald-500/40'
+          : 'bg-rose-500/10 border-rose-500/40'}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className={`text-sm font-bold ${testnet ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {testnet ? '🧪 Binance Futures TESTNET — Güvenli Test Modu' : '🔴 Binance Futures LIVE — Gerçek Para'}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                {testnet
+                  ? 'Algoritmanın emirleri Binance demo/testnet hesabında çalışır. Gerçek bakiyeniz kullanılmaz.'
+                  : 'DİKKAT: Bu mod gerçek Binance Futures hesabında gerçek emir gönderir. Önce Testnet ile doğrulamanız önerilir.'}
+              </p>
+            </div>
+            <button type="button" role="switch" aria-checked={testnet}
+              onClick={() => setTestnet(v => !v)}
+              className={`relative w-14 h-7 rounded-full transition ${testnet ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition ${testnet ? 'left-8' : 'left-1'}`} />
+            </button>
+          </div>
         </div>
 
         {/* API Key and Secret Inputs */}
@@ -528,19 +553,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
               </button>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2 px-1">
-          <input 
-            type="checkbox"
-            id="testnet-toggle"
-            checked={parsedConfig?.exchange?.testnet === true}
-            onChange={(e) => handleUpdate("testnet", e.target.checked, "exchange")}
-            className="w-4 h-4 text-emerald-500 bg-[#0b0e14] border-slate-700 rounded focus:ring-emerald-500"
-          />
-          <label htmlFor="testnet-toggle" className="text-xs sm:text-sm font-semibold text-emerald-400 cursor-pointer select-none">
-            🚀 Binance Testnet (Sanal Para) Modunu Aktif Et
-          </label>
         </div>
 
         {/* Live Test Feedback */}
