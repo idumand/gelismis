@@ -1,5 +1,7 @@
 export type BotState = 'running' | 'stopped';
 export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+export type TradingMode = 'manual' | 'auto';
+export type AlgorithmMode = 'conservative' | 'aggressive' | 'balanced';
 
 export interface BotMetrics {
   total_trades: number;
