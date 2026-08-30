@@ -1,0 +1,44 @@
+{
+  "algorithm": {
+    "name": "Akışkan Ticaret Algoritması v3.0",
+    "type": "smart_flow_analysis"
+  },
+  "exchange": {
+    "pair_whitelist": [
+      "BTC/USDT",
+      "ETH/USDT",
+      "SOL/USDT",
+      "BNB/USDT",
+      "XRP/USDT",
+      "ADA/USDT",
+      "DOGE/USDT",
+      "SUI/USDT",
+      "LINK/USDT",
+      "AVAX/USDT"
+    ],
+    "environment": "testnet",
+    "key": "",
+    "secret": ""
+  },
+  "mode": "manual",
+  "leverage": 5,
+  "minProfitThreshold": 0.5,
+  "maxOpenPositions": 3,
+  "commissionRate": 0.001,
+  "dry_run": true,
+  "coin_selection_mode": "manual",
+  "stop_loss_pct": 1.5,
+  "min_profit_pct_at_1x": 0.5,
+  "stake_amount": 10,
+  "max_open_trades": 3,
+  "exchange_environment": "testnet",
+  "margin_mode": "isolated",
+  "advanced": {
+    "orderFlowAnalysis": true,
+    "marketMicrostructure": true,
+    "dynamicTargets": true,
+    "momentumDetection": true,
+    "liquidityCheck": true,
+    "scalingMultiplier": true
+  }
+}
