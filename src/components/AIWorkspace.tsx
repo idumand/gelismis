@@ -20,17 +20,19 @@ export const AIWorkspace: React.FC = () => {
   const [advice, setAdvice] = useState<any>(null);
   const [cortex, setCortex] = useState<any>(null);
   const [universeView, setUniverseView] = useState<any[]>([]);
+  const [aiHealth, setAiHealth] = useState<any>(null);
 
   const load = async () => {
     try {
-      const [ctxR, posR, rankR, cortexR, universeR] = await Promise.all([
+      const [ctxR, posR, rankR, cortexR, universeR, healthR] = await Promise.all([
         fetch('/api/v1/ai/context'),
         fetch('/api/v1/ai/positions'),
         fetch('/api/v1/ai/ranking?top=80'),
         fetch('/api/v1/ai/cortex?top=40'),
-        fetch('/api/v1/ai/universe?top=300')
+        fetch('/api/v1/ai/universe?top=300'),
+        fetch('/api/v1/ai/health')
       ]);
-      const [d, p, r, cx, uv] = await Promise.all([ctxR.json(), posR.json(), rankR.json(), cortexR.json(), universeR.json()]);
+      const [d, p, r, cx, uv, health] = await Promise.all([ctxR.json(), posR.json(), rankR.json(), cortexR.json(), universeR.json(), healthR.json().catch(() => null)]);
       setCoins(Array.isArray(d.coins) ? d.coins : []);
       setNews(Array.isArray(d.news) ? d.news : []);
       setDirective(d.ai?.agentDirective || d.directive || {});
@@ -42,6 +44,7 @@ export const AIWorkspace: React.FC = () => {
       setRanking(Array.isArray(r.rankings) ? r.rankings : []);
       setCortex(cx || null);
       setUniverseView(Array.isArray(uv?.markets) ? uv.markets : []);
+      setAiHealth(health || null);
     } catch {}
   };
 
@@ -81,11 +84,13 @@ export const AIWorkspace: React.FC = () => {
   };
 
   const toggleAutoPilot = async () => {
+    const enabled = !autoPilot;
+    setAutoPilot(enabled);
     try {
-      const enabled = !autoPilot;
       const r = await fetch('/api/v1/ai/autopilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
-      const d = await r.json();
-      if (!r.ok || d?.ok === false) throw new Error(d?.message || 'Otonom mod değiştirilemedi.');
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d?.ok === false) { setAutoPilot(!enabled); throw new Error(d?.message || 'Otonom mod değiştirilemedi.'); }
+      setMessages(m => [...m, { role:'assistant', content: enabled ? `Otonom mod aktif. ${d?.message || 'AI canlı taramaya başladı.'}` : 'Otonom mod kapatıldı.' }]);
       await load();
     } catch (e:any) { setMessages(m => [...m, { role:'assistant', content:`Otonom mod hatası: ${e?.message || e}` }]); }
   };
@@ -111,11 +116,22 @@ export const AIWorkspace: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="px-3 py-2 rounded-lg bg-slate-800/70 text-xs text-slate-300">LLM: {llm?.model || 'Yok / Fallback'}</span>
-          <span className="px-3 py-2 rounded-lg bg-slate-800/70 text-xs text-slate-300">Agent V5</span>
+          <span className="px-3 py-2 rounded-lg bg-slate-800/70 text-xs text-slate-300">Agent V6</span>
           <button onClick={toggleAutoPilot} className={`px-3 py-2 rounded-lg text-xs font-semibold border ${autoPilot ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-300'}`}>{autoPilot ? <><Square className="w-3.5 h-3.5 inline mr-1"/>Otonom Açık</> : <><Play className="w-3.5 h-3.5 inline mr-1"/>Otonom Kapalı</>}</button>
           <button onClick={load} className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300"><RefreshCw className="w-3.5 h-3.5 inline mr-1"/>Yenile</button>
         </div>
       </div>
+    </div>
+
+    <div className="bg-[#151921] border border-[#1e232f] rounded-xl p-3">
+      <div className="flex flex-wrap gap-2 text-[11px]">
+        <span className="px-2 py-1 rounded bg-slate-900/60 border border-slate-800">AI: {aiHealth?.state || 'başlatılıyor'}</span>
+        <span className={`px-2 py-1 rounded border ${aiHealth?.authenticated ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-300' : 'bg-amber-500/10 border-amber-400/20 text-amber-300'}`}>Binance: {aiHealth?.authenticated ? 'bağlı' : 'bağlı değil'}</span>
+        <span className="px-2 py-1 rounded bg-slate-900/60 border border-slate-800">Motor: {aiHealth?.engineRunning ? 'çalışıyor' : 'durdurulmuş'}</span>
+        <span className="px-2 py-1 rounded bg-slate-900/60 border border-slate-800">WS: {aiHealth?.websocket ? 'canlı' : 'bekleniyor'}</span>
+        <span className="px-2 py-1 rounded bg-slate-900/60 border border-slate-800">Ticker: {aiHealth?.liveTickerCount ?? universeView.length}</span>
+      </div>
+      {aiHealth?.hint && <div className="mt-2 text-[11px] text-slate-400">{aiHealth.hint}</div>}
     </div>
 
     <div className="grid grid-cols-2 lg:grid-cols-8 gap-3">

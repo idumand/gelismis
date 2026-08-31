@@ -159,11 +159,11 @@ function mean(a:number[]){ return a.length?a.reduce((x,y)=>x+y,0)/a.length:0; }
 function stdev(a:number[]){ if(a.length<2)return 0; const m=mean(a); return Math.sqrt(mean(a.map(x=>(x-m)**2))); }
 
 export const DEFAULT_COGNITIVE_POLICY: CognitivePolicy = {
-  minScore: 70,
-  minConfidence: 72,
-  minProbability: .68,
-  maxUncertainty: .36,
-  minRiskReward: 1.35,
+  minScore: 60,
+  minConfidence: 64,
+  minProbability: .60,
+  maxUncertainty: .46,
+  minRiskReward: 1.10,
   requireFreshDataSec: 8,
   antiChop: true,
   counterThesis: true,
@@ -321,7 +321,7 @@ export class ArgosCognitiveCoreV6 {
         'data-quality':expertDataQuality(c,now,policy),
       };
       const weights=policy.onlyMoneyFlow
-        ? {'money-flow':.62,'order-flow':.12,'trend-momentum':.06,'liquidity-path':.08,'crowding':.04,'volatility':.04,'relative-strength':.02,'data-quality':.02}
+        ? {'money-flow':.76,'order-flow':.05,'trend-momentum':.02,'liquidity-path':.03,'crowding':.04,'volatility':.03,'relative-strength':.05,'data-quality':.02}
         : {'money-flow':.18,'order-flow':.17,'trend-momentum':.15,'liquidity-path':.18,'crowding':.08,'volatility':.08,'relative-strength':.10,'data-quality':.06};
       const base=Object.entries(weights).reduce((s,[k,w])=>s+(experts[k]?.score||50)*w,0);
       const agreement=1-clamp(stdev(Object.values(experts).map(x=>x.score))/28,0,.75);
@@ -348,8 +348,12 @@ export class ArgosCognitiveCoreV6 {
       if(uncertainty>policy.maxUncertainty) warnings.push(`Belirsizlik %${(uncertainty*100).toFixed(0)} yüksek`);
       const scenarios=scenarioPack({side,score,probability,uncertainty,regime},c);
       const fresh=(now-n(c.updatedAt||0))/1000<=policy.requireFreshDataSec;
+      const moneyDirection = side==='long' ? n(c.netInflowUSDT??c.netInflowUSD) > 0 : n(c.netInflowUSDT??c.netInflowUSD) < 0;
+      const moneyQuality = experts['money-flow'].score >= (policy.onlyMoneyFlow ? 58 : 0);
+      const moneyEntry = policy.onlyMoneyFlow && moneyDirection && moneyQuality && fresh && quality>=.45 && uncertainty<=Math.max(policy.maxUncertainty,.50) && (!policy.positiveEV || ev>=0) && (!rr || rr>=Math.max(.8,policy.minRiskReward));
       let action:DecisionAction='IGNORE';
-      if(!fresh || quality<.45) action='WAIT';
+      if(moneyEntry) action='ENTER_NOW';
+      else if(!fresh || quality<.45) action='WAIT';
       else if(policy.antiChop && regime==='CHOPPY' && score<86) action='WAIT';
       else if(policy.positiveEV && ev<=0) action='WAIT';
       else if(rr>0 && rr<policy.minRiskReward) action='WAIT';

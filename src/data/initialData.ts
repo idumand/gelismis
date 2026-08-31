@@ -16,7 +16,7 @@ export const INITIAL_METRICS: BotMetrics = {
   open_trades_count: 0,
   max_open_trades: 1,
   stake_amount: 25,
-  min_expected_move_pct: 1,
+  min_expected_move_pct: 0.5,
   stop_loss_pct: 1.5,
   fiat_symbol: 'USD',
   fiat_ratio: 1.0,

@@ -41,14 +41,14 @@ export const HARD_SAFETY = {
 };
 
 export const DEFAULT_GOVERNANCE: AIGovernanceState = {
-  riskMode: 'conservative',
+  riskMode: 'balanced',
   allowEntries: true,
   autoManagePositions: true,
-  minConfidence: 72,
-  minProbability: 0.68,
-  maxUncertainty: 0.36,
-  minRiskReward: 1.35,
-  maxPositions: 1,
+  minConfidence: 66,
+  minProbability: 0.60,
+  maxUncertainty: 0.46,
+  minRiskReward: 1.10,
+  maxPositions: 2,
   maxLeverage: 15,
   stakeAmountUSDT: 25,
   riskPerTradePct: 1,

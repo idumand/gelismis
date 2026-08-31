@@ -100,9 +100,11 @@ const dir=(side:AgentSide,v:number)=>side==='long'?v:-v;
 const bool=(v:any)=>Boolean(v===true||v==='true'||v===1||v==='1');
 function includesAny(s:string, words:string[]){ return words.some(w=>s.includes(w)); }
 function normalizeSymbol(v:string|undefined){
-  const s=String(v||'').trim().toUpperCase(); if(!s) return undefined;
+  const s=String(v||'').trim().toUpperCase(); if(!s || s==='USDT' || s==='USD') return undefined;
   if(s.includes('/')) return s.endsWith('/USDT')?s:undefined;
-  return `${s.replace(/USDT$/,'')}/USDT`;
+  const base=s.replace(/USDT$/,'');
+  if(!base || base==='USDT') return undefined;
+  return `${base}/USDT`;
 }
 
 export const DEFAULT_AGENT_DIRECTIVE:AgentDirective={
@@ -387,7 +389,7 @@ export function applyCommandToDirective(current:AgentDirective,cmd:AgentCommand)
   const next:AgentDirective={...current}; if(cmd.strategy) next.strategy=cmd.strategy; if(cmd.side) next.side=cmd.side;
   if(cmd.maxPositions) next.maxPositions=clamp(Math.round(cmd.maxPositions),1,20); if(cmd.confidenceMin) next.minConfidence=clamp(cmd.confidenceMin,50,96);
   if(cmd.riskPerTradePct) next.riskPerTradePct=clamp(cmd.riskPerTradePct,.1,5);
-  if(cmd.strategy==='money_flow_only'){next.onlyMoneyFlow=true;next.requireDeepAnalysis=false;next.requireOrderFlowAlignment=false;next.requireTrendAlignment=false;}
+  if(cmd.strategy==='money_flow_only'){next.onlyMoneyFlow=true;next.requireDeepAnalysis=false;next.requireOrderFlowAlignment=false;next.requireTrendAlignment=false;next.requireLiquidityPath=false;next.requirePositiveEV=true;next.antiChop=false;next.minConfidence=Math.min(next.minConfidence,58);next.minProbability=Math.min(next.minProbability,.56);next.maxUncertainty=Math.max(next.maxUncertainty,.50);next.minRiskReward=Math.min(next.minRiskReward,.95);}
   if(cmd.strategy==='deep_analysis'){next.onlyMoneyFlow=false;next.requireDeepAnalysis=true;next.requireOrderFlowAlignment=true;next.requireTrendAlignment=true;next.requireLiquidityPath=true;next.useScenarioEngine=true;next.useCounterThesis=true;}
   if(cmd.strategy==='order_flow') next.requireOrderFlowAlignment=true;
   if(cmd.strategy==='liquidity') next.requireLiquidityPath=true;

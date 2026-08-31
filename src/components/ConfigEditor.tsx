@@ -43,7 +43,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
     stake_amount: 25,
     leverage: 15,
     max_open_trades: 1,
-    min_expected_move_pct: 1,
+    min_expected_move_pct: 0.5,
     stop_loss_pct: 1.5,
     trading_mode: "auto" as const,
   };
