@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: binance-bot
+    env: docker
+    plan: free
+    
+    # Build configuration
+    buildCommand: npm ci --prefer-offline && npm run build
+    startCommand: node dist/server.cjs
+    
+    # Port
+    port: 3000
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    
+    # Health check
+    healthCheckPath: /api/v1/health
+    
+    # Auto deploy
+    autoDeploy: true
+    
+    # Resource limits (free tier)
+    plan: free
+    
+    # Scaling
+    numInstances: 1
+    
+    # Timeout
+    startingCommandTimeout: 30
